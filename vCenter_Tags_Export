@@ -1,0 +1,16 @@
+# Connect to vCenter Server
+Connect-VIServer -Server "vCenter FQDN" -User "Username" -Password "Password"
+
+# Retrieve all Tag Categories and Tags from vCenter
+$categories = Get-TagCategory 
+$tags = Get-Tag 
+
+# Combine the retrieved data into an array
+$export = @($categories, $tags)
+
+# Export the data to an XML file
+Export-Clixml -InputObject $export -Path "C:\Export_Tags.xml"
+Write-Host "Export completed!"
+
+# Disconnect from vCenter Server
+Disconnect-VIServer -Confirm:$false
