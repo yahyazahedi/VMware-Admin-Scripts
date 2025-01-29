@@ -1,0 +1,37 @@
+# Connect to vCenter Server
+Connect-VIServer -Server "vCenter FQDN" -User "Username" -Password ""
+
+# Import Roles from XML
+$importedRoles = Import-Clixml -Path "C:\vCenter-Roles-Export.xml"
+
+foreach ($role in $importedRoles) {
+    # Check if the role already exists
+    $existingRole = Get-VIRole -Name $role.Name -ErrorAction SilentlyContinue
+    if (-not $existingRole) {
+        # Retrieve actual privilege objects
+        $privileges = @()
+        foreach ($privilege in $role.PrivilegeList) {
+            $privObject = Get-VIPrivilege -Id $privilege -ErrorAction SilentlyContinue
+            if ($privObject) {
+                $privileges += $privObject
+            } else {
+                Write-Warning "Privilege not found: $privilege"
+            }
+        }
+
+        # Create the role with the resolved privilege objects
+        if ($privileges.Count -gt 0) {
+            New-VIRole -Name $role.Name -Privilege $privileges
+            Write-Host "Created Role: $($role.Name)"
+        } else {
+            Write-Warning "Skipping role $($role.Name) due to missing privileges."
+        }
+    } else {
+        Write-Host "Role already exists: $($role.Name)"
+    }
+}
+
+Write-Host "Import completed"
+
+# Disconnect from vCenter Server
+Disconnect-VIServer -Confirm:$false
