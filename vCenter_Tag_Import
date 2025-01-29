@@ -1,0 +1,47 @@
+# Connect to vCenter Server
+Connect-VIServer -Server "vCenter FQDN" -User "Username" -Password "Password"
+
+# Import Tags and Categories from a XML file
+$import = Import-Clixml -Path "C:\Export_Tags.xml"
+
+# Extract category list and tag list
+$categoryList = $import[0]
+$tagList = $import[1]
+
+# Initialize an array to store newly created categories to avoid duplicates
+$categories = @()
+
+# Create all categories
+foreach ($category in $categoryList) {
+   # Add each category to the $categories array after creation
+   $categories += `
+      New-TagCategory `
+         -Name $category.Name `
+         -Description $category.Description `
+         -Cardinality $category.Cardinality `
+         -EntityType $category.EntityType `
+         -Server $server `
+      | Out-Null
+}
+
+# Create all tags and assign them to the appropriate categories
+foreach ($tag in $tagList) {
+   # Find the matching category object for the tag in the $categories list
+   $category = $categories | where {$_.Name -eq $tag.Category.Name}
+   
+   # If the category is not found, use the category name instead of an object
+   if ($category -eq $null) {$category = $tag.Category.Name}
+
+   # Create the tag and assign it to the selected category
+   New-Tag `
+      -Name $tag.Name `
+      -Description $tag.Description `
+      -Category $category `
+      -Server $server `
+   | Out-Null
+}
+     
+Write-Host "Import completed!"
+
+# Disconnect from the vCenter server
+Disconnect-VIServer -Confirm:$false
