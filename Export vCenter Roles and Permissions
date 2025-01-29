@@ -1,0 +1,12 @@
+ # Connect to vCenter Server
+Connect-VIServer -Server "vCenter FQDN" -User "Username" -Password "Password"
+
+# Export Roles and Privileges
+$roles = Get-VIRole
+
+# Export the data to an XML file
+Export-Clixml -InputObject $roles -Path "C:\vCenter-Roles-Export.xml"
+Write-Host "Export completed"
+
+# Disconnect from vCenter Server
+Disconnect-VIServer -Confirm:$false
